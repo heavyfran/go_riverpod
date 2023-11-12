@@ -12,6 +12,7 @@ import '../../pages/signin_page.dart';
 import '../../pages/signup_page.dart';
 import '../../pages/third_details_page.dart';
 import '../../pages/third_page.dart';
+import 'auth_state_provider.dart';
 import 'route_names.dart';
 
 part 'router_provider.g.dart';
@@ -20,9 +21,23 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 @riverpod
 GoRouter route(RouteRef ref) {
+  final authState = ref.watch(authStateProvider);
+
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/first',
+    redirect: (context, state) {
+      final authenticated = authState;
+      final tryingSignin = state.matchedLocation == '/signin';
+      final tryingSignup = state.matchedLocation == '/signup';
+      final authenticating = tryingSignin || tryingSignup;
+
+      if (!authenticated) return authenticating ? null : '/signin';
+
+      if (authenticating) return '/first';
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/signin',
@@ -73,6 +88,7 @@ GoRouter route(RouteRef ref) {
                 },
                 routes: [
                   GoRoute(
+                    // parentNavigatorKey: _rootNavigatorKey,
                     path: 'details/:id',
                     name: RouteNames.secondDetails,
                     builder: (context, state) {
